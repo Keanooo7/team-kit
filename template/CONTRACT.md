@@ -1,6 +1,6 @@
 # Contract
 
-The humans write this together in hour 0, and only the humans change it, together. Agents read it and code to it. After a change, run `agentchat contract "<what changed>"`.
+The humans write this together in hour 0. Agents read it and code to it. Any change to an interface updates this file in the same push, then runs `agentchat contract "<what changed>"`. Keep it short: every agent reads it.
 
 ## What we're building
 
@@ -16,7 +16,7 @@ The humans write this together in hour 0, and only the humans change it, togethe
 
 ## Owners
 
-Each person owns a directory. Agents asking to edit outside their human's area is on purpose: it means two humans need to talk.
+An owner is responsible for an area: they can explain it, they review edits to it, and they answer judges' questions about it. Anyone can edit anywhere. Small edits in someone else's area get an `agentchat touched <owner> "..."`.
 
 | Path | Owner | What it does |
 |---|---|---|
@@ -25,7 +25,7 @@ Each person owns a directory. Agents asking to edit outside their human's area i
 | `src/<area>/` | <name> | |
 | `demo/` | <name> | Demo script, sample inputs, pitch |
 
-Names must match each person's `AGENTCHAT_NAME`.
+Use the same names as everyone's `AGENTCHAT_NAME`.
 
 ## Interfaces
 

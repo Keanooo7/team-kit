@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """agentchat: status pings between the team's Claude Code sessions over one Slack channel.
 
-Agents post three kinds of message and nothing else:
+Agents post four kinds of message and nothing else:
   agentchat merged "<area>: <what changed>"
+  agentchat touched <owner> "<what you changed in their area, and why>"
+  agentchat contract "<the interface change>"
   agentchat blocked <owner> "<what you need>"
-  agentchat contract "<the change the humans agreed>"
 
 Reading:
   agentchat new      print messages since the last `new` (shared cursor)
@@ -12,7 +13,7 @@ Reading:
 
 Hooks (wired in by install.sh, not for direct use):
   agentchat hook-inbox    UserPromptSubmit: put new channel messages into the agent's context
-  agentchat hook-owners   PreToolUse: ask before an agent edits another owner's area or CONTRACT.md
+  agentchat hook-guard    PreToolUse: block secrets written into files, and force pushes
 
 Stdlib only. Config comes from the environment or <kit>/.env.
 """
@@ -29,7 +30,7 @@ from pathlib import Path
 KIT = Path(__file__).resolve().parent.parent
 API = os.environ.get("AGENTCHAT_API", "https://slack.com/api")
 STATE = Path(os.environ.get("AGENTCHAT_STATE", Path.home() / ".cache" / "agentchat"))
-KINDS = {"merged": "MERGED", "blocked": "BLOCKED", "contract": "CONTRACT CHANGE"}
+KINDS = {"merged": "MERGED", "contract": "CONTRACT CHANGE"}
 SKIP_SUBTYPES = {"channel_join", "channel_leave", "channel_purpose", "channel_topic", "channel_name"}
 
 
@@ -168,69 +169,49 @@ def cmd_hook_inbox():
             print(f"- {line}")
 
 
-def parse_owners(contract):
-    """{path_prefix: {owners}} from any CONTRACT.md table with 'Path' and 'Owner' columns."""
-    owners, cols = {}, None
-    try:
-        lines = contract.read_text().splitlines()
-    except OSError:
-        return owners
-    for line in lines:
-        s = line.strip()
-        if not s.startswith("|"):
-            cols = None
-            continue
-        cells = [c.strip().strip("`").strip() for c in s.strip("|").split("|")]
-        low = [c.lower() for c in cells]
-        if "path" in low and "owner" in low:
-            cols = (low.index("path"), low.index("owner"))
-            continue
-        if cols is None or set(s) <= set("|-: "):
-            continue
-        if max(cols) < len(cells):
-            path, owner = cells[cols[0]], cells[cols[1]]
-            if path and owner and not path.startswith("<"):
-                owners[path.lstrip("./")] = {o.strip().lower() for o in re.split(r"[,/&+]| and ", owner) if o.strip()}
-    return owners
+SECRET_PATTERNS = [
+    (r"sk-ant-[A-Za-z0-9_-]{10,}", "Anthropic key"),
+    (r"sk-(proj-)?[A-Za-z0-9_-]{20,}", "OpenAI-style key"),
+    (r"xox[abprs]-[A-Za-z0-9-]{10,}", "Slack token"),
+    (r"AIza[0-9A-Za-z_-]{35}", "Google API key"),
+    (r"LLM\|\d+\|[A-Za-z0-9_-]{8,}", "Meta Model API key"),
+    (r"gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}", "GitHub token"),
+    (r"AKIA[0-9A-Z]{16}", "AWS key"),
+    (r"-----BEGIN [A-Z ]*PRIVATE KEY-----", "private key"),
+    (r"[a-z][a-z0-9+.-]*://[^/\s:@]+:[^/\s@]{3,}@", "password in a URL"),
+]
+FORCE_PUSH = re.compile(r"\bgit\b[^;&|]*\bpush\b[^;&|]*(\s--force(-with-lease)?\b|\s-[a-zA-Z]*f\b|\s\+[^\s]+)")
 
 
-def ask(reason):
+def deny(reason):
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
-        "permissionDecision": "ask",
+        "permissionDecision": "deny",
         "permissionDecisionReason": reason,
     }}))
 
 
-def cmd_hook_owners():
+def cmd_hook_guard():
+    """Public repo, four people pushing to main: no secrets in files, no force pushes."""
     try:
         data = json.load(sys.stdin)
     except Exception:
         return
     ti = data.get("tool_input") or {}
-    path = ti.get("file_path") or ti.get("notebook_path")
-    if not path:
+    if data.get("tool_name") == "Bash":
+        if FORCE_PUSH.search(ti.get("command", "")):
+            deny("No force pushes: four people push to main. Rebase on origin/main and push normally.")
         return
-    proj = Path(os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or ".").resolve()
-    try:
-        rel = Path(path).resolve().relative_to(proj).as_posix()
-    except ValueError:
-        return  # outside the project: not ours to police
-    if rel == "CONTRACT.md":
-        return ask("CONTRACT.md is changed by the humans together. Approve only if the team agreed this "
-                   "change; then run `agentchat contract \"...\"`.")
-    who = me()
-    if not who:
-        return
-    best = None
-    for prefix, names in parse_owners(proj / "CONTRACT.md").items():
-        p = prefix.rstrip("/")
-        if (rel == p or rel.startswith(p + "/")) and (best is None or len(p) > len(best[0])):
-            best = (p, names)
-    if best and who not in best[1]:
-        owner = ", ".join(sorted(best[1]))
-        ask(f"{rel} is in {best[0]}/, owned by {owner}. Coordinate with {owner}'s human first "
-            f"(or `agentchat blocked {sorted(best[1])[0]} \"...\"`). Approve only if that's agreed.")
+    path = ti.get("file_path") or ti.get("notebook_path") or ""
+    if Path(path).name.startswith(".env"):
+        return  # .env is where keys belong (gitignored)
+    texts = [ti.get(k) for k in ("content", "new_string", "new_source")]
+    texts += [e.get("new_string") for e in ti.get("edits") or [] if isinstance(e, dict)]
+    blob = "\n".join(t for t in texts if isinstance(t, str))
+    for pat, what in SECRET_PATTERNS:
+        if re.search(pat, blob):
+            return deny(f"That looks like a secret ({what}) going into {Path(path).name or 'a file'}. The repo is "
+                        f"public: put it in .env (gitignored) and read it from an environment variable.")
 
 
 def main(argv):
@@ -244,14 +225,16 @@ def main(argv):
             post(f"{KINDS[cmd]}: {rest[0]}")
         elif cmd == "blocked" and len(rest) == 2:
             post(f"BLOCKED on {rest[0]}: {rest[1]}")
+        elif cmd == "touched" and len(rest) == 2:
+            post(f"TOUCHED {rest[0]}'s area: {rest[1]}")
         elif cmd == "new":
             cmd_new()
         elif cmd == "watch":
             cmd_watch(int(rest[0]) if rest else 30)
         elif cmd == "hook-inbox":
             cmd_hook_inbox()
-        elif cmd == "hook-owners":
-            cmd_hook_owners()
+        elif cmd == "hook-guard":
+            cmd_hook_guard()
         else:
             raise SystemExit(f"agentchat: bad usage: {' '.join(argv)}\n\n{__doc__.strip()}")
     except (RuntimeError, urllib.error.URLError, TimeoutError) as e:

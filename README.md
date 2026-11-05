@@ -1,40 +1,54 @@
 # team-kit
 
-Setup for four people each running Claude Code on one shared repo.
+Our Claude Code setup for team hackathons: four people, one agent each, one shared public repo.
 
-- **`agentchat`**: agents post status to one Slack channel. Only three kinds of message: merged, blocked, contract change.
-- **Inbox hook**: every time you prompt your agent, it sees what teammates posted since its last turn, labelled as information, not instructions.
-- **Owners hook**: if your agent tries to edit another owner's area (from the table in `CONTRACT.md`), or `CONTRACT.md` itself, it has to ask you first.
-- **`/ship`**: check, explain-back, your OK, push, announce.
-- **`/brief`**: prep you to explain your area to judges, then quiz you.
-- **`template/`**: `CONTRACT.md` and team `CLAUDE.md`. **`RUNBOOK.md`**: how the humans work.
+## What's in it
 
-This is our own dev tooling. It's never part of the demo, and its files stay out of the project's git (except the two templates, which the team fills in at the event).
+| | |
+|---|---|
+| `claude/team.md` | **The shared team file.** How we work together, how agents work, the event rules that affect code, plus the event itself (tracks, schedule, rubric, prizes). Every agent loads it on every turn, so keep it short. |
+| `skills/` | Sponsor API references, loaded only when needed: `meta-model-api`, `gemini-argon`, `fetch-agentverse` |
+| `commands/` | `/ship`: check, explain-back, your OK, push, announce. `/brief`: prep you for judges' Q&A on your area, then quiz you |
+| `bin/agentchat` | Agents post status to Slack `#agents` (`merged`, `touched`, `contract`, `blocked`). Its hooks show each agent what teammates posted, block secrets from being written into files, and block force pushes |
+| `template/CONTRACT.md` | The one file that gets committed: what we're building, the demo, owners, interfaces. Written together in hour 0 |
+| `RUNBOOK.md` | How the humans work: hour 0, hourly syncs, freeze, rehearsal |
 
-## One-time setup (one person)
+## How the instruction files layer
 
-1. Go to https://api.slack.com/apps, then **Create New App → From a manifest**. Pick the workspace and paste `slack-manifest.yaml`.
-2. **Install to Workspace**, then copy the **Bot User OAuth Token** (`xoxb-…`).
-3. Make a channel, e.g. `#agents`, and run `/invite @agentchat` in it. Copy the channel ID (channel name → bottom of the About tab, starts with `C`).
-4. DM the token and channel ID to the team. Never put them in a repo.
+| Layer | Where | Who it's for | In the public repo? |
+|---|---|---|---|
+| Your personal global rules | `~/.claude/CLAUDE.md` | you | no |
+| **Team rules + event** | `<project>/.claude/CLAUDE.md` → symlink to `claude/team.md` | all 4 agents | no (git-excluded) |
+| **What we're building** | `<project>/CONTRACT.md` | all 4 agents | **yes**, written at the event |
+| Your personal notes for this project (optional) | `<project>/CLAUDE.local.md` | you | no (git-excluded) |
+| Sponsor API details | `<project>/.claude/skills/*` → symlinks | loaded on demand | no (git-excluded) |
 
-## Each person
+Everything from the kit is **symlinked**, so after a `git pull` of team-kit, every project picks up the change on your next Claude Code session. No reinstall needed unless a new skill or command was added. Nothing pre-written lands in the project's git history. That matters because the rules disqualify presenting earlier work.
+
+## One-time Slack setup (done)
+
+The workspace, the `agentchat` app and `#agents` already exist. Edan DMs you the bot token and channel ID. For a new workspace: create an app at https://api.slack.com/apps → **From a manifest** → paste `slack-manifest.yaml` → install → copy the **Bot User OAuth Token** → `/invite @agentchat` in the channel.
+
+## Each person, before Saturday
 
 ```bash
-git clone <team-kit repo> ~/dev/team-kit
-cd ~/dev/team-kit
-cp .env.example .env              # fill in the token, channel ID, and your name
-./install.sh ~/dev/<project>      # hooks + commands; adds CONTRACT.md/CLAUDE.md if missing
-agentchat merged "test: hello from <name>"
+git clone https://github.com/EdanBarrios/team-kit ~/dev/team-kit
+cd ~/dev/team-kit && cp .env.example .env    # token, channel ID, your name (lowercase)
+bin/agentchat merged "test: hello from <name>"
 ```
 
-Restart Claude Code in the project. Your next prompt shows the other people's test messages.
+## On the day
 
-**Optional, when you're away from the keyboard:** ask Claude to "run `agentchat watch` with the Monitor tool". The session then wakes on new messages instead of waiting for your next prompt.
+```bash
+git clone <our public repo> && ~/dev/team-kit/install.sh <that folder>
+```
+
+Restart Claude Code in the project. That sets up the team file, skills, commands and hooks, and puts `agentchat` on your PATH.
+
+**Optional:** to have an idle session wake on new messages, ask Claude to "run `agentchat watch` with the Monitor tool".
 
 ## Notes
 
-- The hooks never block you. If Slack is down or rate-limited, the inbox just stays empty that turn.
-- The owners hook only covers Claude's Edit and Write tools. A shell command can still write anywhere. It's a speed bump, not a wall.
-- Your own agent's posts are filtered out of your inbox. Humans posting in the channel show up too, labelled `(human)`.
-- `test/test.sh` runs the whole kit against a fake Slack. No token needed.
+- The hooks never block a prompt. If Slack is down, the inbox is just empty that turn.
+- The secrets guard covers Claude's file edits. A key typed into a shell command still gets through. It's a seatbelt, not a vault.
+- `test/test.sh` runs everything against a fake Slack. No token needed.
