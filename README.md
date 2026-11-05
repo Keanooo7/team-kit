@@ -32,15 +32,15 @@ The workspace, the `agentchat` app and `#agents` already exist. Edan DMs you the
 ## Each person, before Saturday
 
 ```bash
-git clone https://github.com/EdanBarrios/team-kit ~/dev/team-kit
-cd ~/dev/team-kit && cp .env.example .env    # token, channel ID, your name (lowercase)
+git clone https://github.com/EdanBarrios/team-kit ~/team-kit
+cd ~/team-kit && cp .env.example .env    # token, channel ID, your name (lowercase)
 bin/agentchat merged "test: hello from <name>"
 ```
 
 ## On the day
 
 ```bash
-git clone <our public repo> && ~/dev/team-kit/install.sh <that folder>
+git clone <our public repo> && ~/team-kit/install.sh <that folder>
 ```
 
 Restart Claude Code in the project. That sets up the team file, skills, commands and hooks, and puts `agentchat` on your PATH.

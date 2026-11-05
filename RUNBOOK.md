@@ -9,7 +9,7 @@ Agents write most of the code. Each human owns one area well enough to explain i
 
 ## Hour 0: 10:45–11:30, humans only
 
-- One person creates the **public** repo and invites everyone, and everyone clones it and runs `~/dev/team-kit/install.sh <repo>` (1 minute).
+- One person creates the **public** repo and invites everyone, and everyone clones it and runs `~/team-kit/install.sh <repo>` (1 minute).
 - Write `CONTRACT.md` together: the pitch, the demo steps, owners and interfaces. Keep it short.
 - **Test:** each of us can explain every area and every arrow between them. If someone can't, the contract isn't done.
 - Stub every interface with fake data before writing real logic, so all four areas can build in parallel.
