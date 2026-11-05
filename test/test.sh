@@ -16,6 +16,8 @@ python3 -I -c "import json,sys; h=json.load(open(sys.argv[1]))['hooks']; assert 
 [ "$(readlink "$P/.claude/CLAUDE.md")" = "$KIT/claude/team.md" ] && grep -q "Submissions due\|submissions due" "$P/.claude/CLAUDE.md" && pass "team rules + event knowledge linked as .claude/CLAUDE.md"
 [ -L "$P/.claude/skills/meta-model-api" ] && [ -f "$P/.claude/skills/fetch-agentverse/SKILL.md" ] && [ -L "$P/.claude/commands/ship.md" ] && pass "skills and commands symlinked"
 [ -f "$P/CONTRACT.md" ] && [ ! -e "$P/CLAUDE.md" ] && pass "only CONTRACT.md lands in the repo"
+[ "$(grep -c '(team-kit)' "$P/CLAUDE.local.md")" = 1 ] && grep -q "You work for \*\*bob\*\*" "$P/CLAUDE.local.md" && pass "CLAUDE.local.md names the human, once after re-install"
+echo "my own note" >> "$P/CLAUDE.local.md"; inst; grep -qx "my own note" "$P/CLAUDE.local.md" && [ "$(grep -c '(team-kit)' "$P/CLAUDE.local.md")" = 1 ] && pass "re-install keeps personal notes"
 (cd "$P" && git add -A && [ "$(git diff --cached --name-only)" = "CONTRACT.md" ]) && pass "git sees nothing from the kit but CONTRACT.md"
 (cd "$P" && git reset -q)
 

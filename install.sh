@@ -34,6 +34,16 @@ rm -f "$PROJ/.claude/CLAUDE.md" "$PROJ/.claude/team-knowledge"
 ln -sfn "$KIT/claude/team.md" "$PROJ/.claude/CLAUDE.md"
 EXCLUDED+=(.claude/CLAUDE.md)
 
+# 2b. who this agent works for: the only per-person line. CLAUDE.local.md is personal and
+#     git-excluded; we manage one marked line in it and leave anything else the person wrote.
+NAME="$(grep '^AGENTCHAT_NAME=' "$ENVF" | head -1 | cut -d= -f2- | tr -d "\"' " | tr '[:upper:]' '[:lower:]')"
+LOCAL="$PROJ/CLAUDE.local.md"
+LINE="You work for **$NAME** (team-kit). Your human's area is the row for $NAME in the Owners table of CONTRACT.md. Everyone else's areas are theirs to explain, but you may make small edits there (see team rules)."
+touch "$LOCAL"
+grep -v '(team-kit)' "$LOCAL" > "$LOCAL.tmp" || true
+{ echo "$LINE"; cat "$LOCAL.tmp"; } > "$LOCAL" && rm -f "$LOCAL.tmp"
+echo "CLAUDE.local.md: you work for $NAME"
+
 # 3. slash commands and skills, symlinked
 for f in "$KIT"/commands/*.md; do
   ln -sfn "$f" "$PROJ/.claude/commands/$(basename "$f")"

@@ -20,7 +20,7 @@ Our Claude Code setup for team hackathons: four people, one agent each, one shar
 | Your personal global rules | `~/.claude/CLAUDE.md` | you | no |
 | **Team rules + event** | `<project>/.claude/CLAUDE.md` → symlink to `claude/team.md` | all 4 agents | no (git-excluded) |
 | **What we're building** | `<project>/CONTRACT.md` | all 4 agents | **yes**, written at the event |
-| Your personal notes for this project (optional) | `<project>/CLAUDE.local.md` | you | no (git-excluded) |
+| **Which human this agent works for** (+ your own notes) | `<project>/CLAUDE.local.md`, written by install.sh from your `.env` name | your agent | no (git-excluded) |
 | Sponsor API details | `<project>/.claude/skills/*` → symlinks | loaded on demand | no (git-excluded) |
 
 Everything from the kit is **symlinked**, so after a `git pull` of team-kit, every project picks up the change on your next Claude Code session. No reinstall needed unless a new skill or command was added. Nothing pre-written lands in the project's git history. That matters because the rules disqualify presenting earlier work.

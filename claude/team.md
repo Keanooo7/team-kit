@@ -1,6 +1,6 @@
 # Team rules: AIE Code Summit, Nov 7
 
-Four of us, one agent each, one public repo, 6h15m. **Read `CONTRACT.md` first:** what we're building, the demo, who owns what, and the interfaces between areas. Only read the sections you need.
+Four of us, one agent each, one public repo, 6h15m. `CLAUDE.local.md` says which human you work for. **Read `CONTRACT.md` first:** it's the spec for the day, covering what we're building, the demo, who owns what, and the interfaces between areas. Only read the sections you need.
 
 ## How we work together
 
