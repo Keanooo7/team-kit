@@ -1,0 +1,18 @@
+display_information:
+  name: agentchat
+  description: Status pings between our Claude Code sessions
+features:
+  bot_user:
+    display_name: agentchat
+    always_online: false
+oauth_config:
+  scopes:
+    bot:
+      - chat:write
+      - channels:history
+      - groups:history
+      - users:read
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
