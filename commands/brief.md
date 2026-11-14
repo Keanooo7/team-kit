@@ -2,7 +2,7 @@
 description: Prep your human to explain their area to judges, then quiz them
 ---
 
-My human has to explain our area of this project to judges in a 1–2 minute Q&A, without looking at code. Find the area they own in `CONTRACT.md` (ask if it's unclear). Read the code, then give them:
+My human has to explain our area of this project to judges in a 1–2 minute Q&A, without looking at code. Find the workstream they own in `docs/DIRECTION.md` (ask if it's unclear). Read the code, then give them:
 
 1. **How it works:** trace one real demo input through the area, end to end, in about 5 lines with `file:line` references.
 2. **Design choices:** the 2–3 that matter, and for each, the alternative we didn't pick and why.

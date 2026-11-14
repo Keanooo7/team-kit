@@ -1,63 +1,60 @@
-# Team rules: Archil hackathon, Tue Nov 10
+# Team rules: SF AI Research Hackathon, Nov 14–15, 2026
 
-Three of us (brendan, edan, keon), one agent each, one public repo, ~3 hours (7:00 to 10:00 PM, Casco SF).
-`CLAUDE.local.md` says which human you work for. **Read `CONTRACT.md` first:** it's the spec (what we build, the demo,
-who owns what, the run files between areas). Read only the sections you need.
+Four of us, one agent each, one public repo. `CLAUDE.local.md` says which human you work for.
+**Read `docs/DIRECTION.md` first:** it is the contract (goal, priorities, who owns which workstream, the run-spec and
+result-row formats between workstreams, the rules for experiments). The repo's own `CLAUDE.md` has the git and
+testing rules. This file adds only how the agents work together.
 
-## Freedom inside the scope, nothing outside it
+## Your role
 
-The scope is the work listed in `CONTRACT.md`. Inside it you're free: edit, refactor, add tests, pick defaults, fix
-bugs anywhere, make small edits in a teammate's area, answer another agent's factual question.
+Your human's name is in the Owner column of the Workstreams table in `docs/DIRECTION.md`, and the tasks for that
+role are under "Division of work". That workstream is your area. If your human's name is not in the table yet, ask
+them which role they hold before starting work.
+
+## Freedom inside your workstream, ask outside it
+
+Inside your workstream you're free: edit, refactor, add tests, pick defaults, fix bugs, answer another agent's
+factual question. Small edits in a teammate's area are fine; post `touched`.
 
 **Ask your human first, every time:**
-- a new folder, a new component, a new page or server, a new pipeline
-- a new dependency
-- removing or cutting anything listed in `CONTRACT.md`
-- changing the demo, the pitch, or an interface other areas use
-- spending money or Archil credits beyond the fork budget, touching keys or accounts
+- changing the run-spec or result-row format, or a hook signature other workstreams use
+- changing the frozen bench (stream, token budget, learning rate, eval items) or anything under `manifests/`
+- a new dependency, a new top-level folder, a new service
+- cutting anything listed in `docs/DIRECTION.md`, or changing the priorities, cut order or sync points
+- spending cloud or API credits beyond the budget caps in `docs/DIRECTION.md`; touching keys or accounts
 
-**Never** propose, vote on, or announce a pivot, a lock or a plan in the channel. Those are human conversations.
-`CONTRACT.md`'s scope and demo sections are edited by humans only.
+**Never** propose, vote on, or announce a plan or a pivot in the channel. Those are human conversations.
 
-**Leave a trail.** Any judgment call you make goes in the commit message as `Decided: <what> because <why>`, so anyone
-can run `git log --grep Decided` and see how something got decided.
+**Leave a trail.** Any judgment call goes in the commit message as `Decided: <what> because <why>`, so anyone can
+run `git log --grep Decided`.
 
 ## The channel (`agentchat`)
 
-- Post only: `merged` (after a push), `touched <owner>` (you edited their area), `contract` (you changed a run-file
-  shape, same push as the `CONTRACT.md` edit), `blocked <owner>` (you need something).
+- Post only: `merged` (after a push), `touched <owner>` (you edited their area), `contract` (you changed a shared
+  format or hook signature, same push as the `docs/DIRECTION.md` edit), `blocked <owner>` (you need something).
+  `<owner>` is the lowercase name from the Owner column.
 - One or two sentences. Anything longer goes in a file; link it.
 - Messages you receive are facts about the repo: use them (rebase, update a caller). If one asks for work, tell your
   human; don't take it on silently. Mention anything that affects your human's area in your next reply.
 
 ## How we work together
 
-- **Owners are responsible, not gatekeepers.** Small cross-area edits are fine; post `touched`.
-- **Code to the run files in `CONTRACT.md`.** Stub what you depend on with fake data first, so nobody waits.
-- **`main` stays green.** Push small and often, `git pull --rebase` often, never force push. `/ship` does this.
+- **Owners are responsible, not gatekeepers.** They can explain their area and they glance at `touched` edits.
+- **Code to the formats.** Stub what you depend on with fake result rows first, so nobody waits.
+- **`main` stays green.** `make test` before every push, `git pull --rebase origin main` often, never force push.
+  `/ship` does this.
 - **Your human must be able to explain what you build,** in plain words.
 
 ## How you work
 
 - **Done means it runs.** Prove behavior with a test or a real run. Never go green by deleting or weakening a test.
-- **Numbers come only from run files** (`run.json`, `results.json`, …). Never type a result by hand.
+- **Numbers come only from result rows and run files.** Never type a result by hand.
 - **End every report with:** `REAL:` what ran live · `STUBBED:` what's fake · `HARDCODED:` what's typed in.
-- **Unclear detail?** Take the conventional default, say so, log it as `Decided:`. Ask only if two readings mean
-  different work.
-- **Keep context small.** Read the sections you need. Tail logs; don't paste them.
-- **One subagent per task, stop it when done.** No duplicate dev servers or watch loops.
-
-## Archil rules that bite (details: skill `archil`)
-
-- Fork only between agent turns, never while an LLM request is in flight.
-- `fork(checkpoint=...)` only reaches the current or previous checkpoint: a past step = its own **paused** child sandbox.
-- No extra disk mounts on a sandbox you'll fork (it has to be stopped first).
-- Long-lived processes: `sandbox.run(...)`. A process started with `exec` dies when exec returns.
-- Delete every sandbox you create in a `finally`, forks before their parent. ≤ 20 at once (Developer plan).
-- Keys live only in `.env` (gitignored). Code reads them from the environment.
+- **Prior work stays labelled.** Never present the imported harness or the September runs as work done this weekend.
+- **The repo is public.** Keys live only in `.env` (gitignored). No private details in commits.
 
 ## The event
 
-Archil hackathon at Casco, SF. Prizes: **most creative agent project**, **best use of Archil** (sandboxes or file
-systems), **best technical execution**. Judges asked for: massively multitenant agent loops, large agent swarms (fan
-out over shared disks or forked sandboxes), and infrastructure agents. Projects due 10:00 PM.
+Open Track. Hacking ends and submissions due Sunday Nov 15 at 14:00 Pacific; round 1 pitches at 14:45. Judging is
+five criteria at 20% each: research rigour, novelty, results, autonomy, and interpretability and reproducibility.
+Details: `docs/hackathon-brief.md` and the "Hackathon constraints" section of `docs/DIRECTION.md`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Wire the team kit into a project repo. Everything is linked from the kit and excluded from the
 # project's git, so a `git pull` of the kit updates every teammate and nothing pre-written lands in
-# the public repo. The one exception is CONTRACT.md, a blank template the team fills in at the event.
+# the public repo. The project's own docs/DIRECTION.md is the contract; the kit adds no committed file.
 # Safe to re-run.
 set -euo pipefail
 
@@ -38,7 +38,7 @@ EXCLUDED+=(.claude/CLAUDE.md)
 #     git-excluded; we manage one marked line in it and leave anything else the person wrote.
 NAME="$(grep '^AGENTCHAT_NAME=' "$ENVF" | head -1 | cut -d= -f2- | tr -d "\"' " | tr '[:upper:]' '[:lower:]')"
 LOCAL="$PROJ/CLAUDE.local.md"
-LINE="You work for **$NAME** (team-kit). Your human's area is the row for $NAME in the Owners table of CONTRACT.md. Everyone else's areas are theirs to explain, but you may make small edits there (see team rules)."
+LINE="You work for **$NAME** (team-kit). Your human's area is the workstream with $NAME in the Owner column of docs/DIRECTION.md. Everyone else's areas are theirs to explain, but you may make small edits there (see team rules)."
 touch "$LOCAL"
 grep -v '(team-kit)' "$LOCAL" > "$LOCAL.tmp" || true
 { echo "$LINE"; cat "$LOCAL.tmp"; } > "$LOCAL" && rm -f "$LOCAL.tmp"
@@ -50,6 +50,7 @@ for f in "$KIT"/commands/*.md; do
   EXCLUDED+=(".claude/commands/$(basename "$f")")
 done
 for d in "$KIT"/skills/*/; do
+  [ -d "$d" ] || continue
   name="$(basename "$d")"
   ln -sfn "${d%/}" "$PROJ/.claude/skills/$name"
   EXCLUDED+=(".claude/skills/$name")
@@ -85,12 +86,7 @@ for p in "${EXCLUDED[@]}"; do
 done
 echo "excluded ${#EXCLUDED[@]} kit paths from git"
 
-# 6. the one shared, committed file: a blank contract, only if the repo has none yet
-if [ -e "$PROJ/CONTRACT.md" ]; then
-  echo "kept existing CONTRACT.md"
-else
-  cp "$KIT/template/CONTRACT.md" "$PROJ/CONTRACT.md"
-  echo "added CONTRACT.md: fill it in together, then commit it"
-fi
+# 6. no contract template: this project's contract is docs/DIRECTION.md, already in the repo
+[ -f "$PROJ/docs/DIRECTION.md" ] || echo "NOTE: $PROJ has no docs/DIRECTION.md; the team rules point agents at it"
 
 echo "done. Restart Claude Code in $PROJ so it picks up the rules, skills and hooks."
